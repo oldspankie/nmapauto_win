@@ -1,13 +1,15 @@
 ﻿#.\nmapauto.ps1 <target-ip> <type>
-
+#Based (heavily) on 21y4d's
+#https://github.com/21y4d/nmapAutomator.git
 
 param (
     [string]$IP,
     [string]$scanType
 )
 
-$nmapcmd = "";
-$scanQuiet = $false;
+$global:nmapcmd = "nmap";
+$global:scanQuiet = $false;
+$global:pingttl = "0";
 
 function usage()
 {
@@ -47,9 +49,11 @@ function header()
     }
     else
     {
+        $osType = checkOS;
         write-host "Host is likely running" -ForegroundColor Green
-        write-host "Your Mother" -ForegroundColor Magenta #placeholder
+        write-host $osType -ForegroundColor Magenta #placeholder
     }
+    write-host "`n`n";
 }
 
 function checkPing
@@ -57,17 +61,35 @@ function checkPing
     $pingTest = Test-Connection -ComputerName $IP -count 3 -quiet;
     if (!$pingTest)
     {
+        $global:nmapcmd = "nmap -Pn";
         return $true;
     }
     else
     {
+        $global:pingttl = test-connection -ComputerName $IP -count 1 -Quiet | select responsetimetolive;
+        $global:nmapcmd = "nmap";
         return $false
     }
 }
 
 function checkOS()
 {
-
+    if ($pingttl -eq "256" -or $pingttl -eq "255" -or $pingttl -eq "254")
+    {
+        return "OpenBSD/Cisco/Oracle";
+    }
+    elseif ($pingttl -eq "128" -or $pingttl -eq "127")
+    {
+        return "Windows";
+    }
+    elseif ($pingttl -eq "64" -or $pingttl -eq "63")
+    {
+        return "Linux";
+    }
+    else
+    {
+        return "Unknown OS!"
+    }
 }
 
 function assignPort()
@@ -78,6 +100,32 @@ function assignPort()
         #$basicPorts = (get-content "nmap/quick_$IP.nmap" | select-string "open" | $_.split(" ")[1] | $_.split("/")[1] | $_ -replace "\n" "," | select -first 1
         #write-host $basicPorts;
     }
+}
+
+function quickScan()
+{
+    write-host "----------Starting Nmap Quick Scan----------" -ForegroundColor Green;
+    $scancmd = $nmapcmd + " -T4 --max-retries 1 --max-scan-delay 20 --defeat-rst-ratelimit --open -v -oN nmap/Quick_"+$IP+".nmap "+$IP;
+    #$scan = " -T4 --max-retries 1 --max-scan-delay 20 --defeat-rst-ratelimit --open -v -oN nmap/Quick_"+$IP+".nmap "+$IP;
+    
+    & cmd /c $scancmd
+    #Start-Process $nmaptype "-T4 --max-retries 1 --max-scan-delay 20 --defeat-rst-ratelimit --open -oN nmap/Quick_$IP.nmap $IP"
+    #Start-Process -filepath $nmaptype -argumentlist $scan -wait
+    write-host "`n`n`n";
+}
+
+function basicScan()
+{
+    write-host "----------Starting Nmap Basic Scan----------" -ForegroundColor Green;
+
+    
+}
+
+
+
+function footer()
+{
+    set-location -path ..
 }
 
 
@@ -95,7 +143,7 @@ if ($scanType)
 {
     #make dirs
     new-item -path $IP -itemtype directory -force | out-null; #hide output
-    cd /d $IP;
+    Set-Location -path $IP;
     new-item -path "nmap" -itemtype directory -force | out-null;
 
     #assignPorts($IP);
@@ -104,13 +152,13 @@ if ($scanType)
 
     switch ($scanType)
     {
-        "quick" { write-host "Quickie"; }
+        "quick" { quickScan; }
         "basic" { write-host "Basic"; }
         "full" { write-host "Full"; }
         "vulns" { write-host "Vulns"; }
     }
 
-    #footer;
+    footer;
 }
 else
 {
