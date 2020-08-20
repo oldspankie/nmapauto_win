@@ -5,6 +5,7 @@ A PowerShell-take on nmapAutomator
 # Summary
 Based heavily on (or, I guess, translated from) 21y4d's nmapAutomator script
   - https://github.com/21y4d/nmapAutomator
+
 While initially a skeleton of some of the functions, the goal is to at least have this as complete as what it is based from.
 Somethings, understandably, have had to be rewritten.
 While this may likely take on a life of it's own in the future, I cannot deny the inspiration.
@@ -23,7 +24,8 @@ nmap installed on the Windows PC.  The package with ZenMap should include the 'n
 There will be more, once the script becomes more complete.
 
 
-#Examples:
+# Examples:
+
     .\nmapauto.ps1 <target> <scan>
     .\nmapauto.ps1 google.com quick
     .\nmapauto.ps1 8.8.8.8 vulns
@@ -31,7 +33,7 @@ There will be more, once the script becomes more complete.
 Scan results will get dropped from the directory you run the script from.
 
 
-#TODO
+# TODO
 * Finish functions for all scans and data gathering
 * Support subnet/range scan
 * Implement recon scanning
