@@ -112,15 +112,18 @@ function assignPorts()
     }
 
     #allPorts
-    if (test-path -path "nmap/Full_$IP.nmap")
+    if (test-path -path "nmap/full_$IP.nmap")
     {
-        if (test-path -path "nmap/Quick_$IP.nmap")
+        if (test-path -path "nmap/quick_$IP.nmap")
         {
-
+            $allPorts = (get-content "nmap/quick_$IP.nmap") | select-string "open";
+            $allPorts += (get-content "nmap/full_$IP.nmap") | select-string "open"; #need to clean/remove dupes
+            $global:allPorts = cleanPorts($allPorts);
         }
         else
         {
-
+            $allPorts = (get-content "nmap/full_$IP.nmap") | select-string "open";
+            $global:allPorts = cleanPorts($allPorts);
         }
     }
 }
