@@ -115,7 +115,12 @@ function assignPorts()
         {
             $global:ports = $global:ports -replace ".$" #clean trailing ,'s
         }
-        write-host $global:ports;
+        #write-host $global:ports;
+    }
+    else
+    {
+        #scan all ports
+        $global:ports = "-";
     }
 }
 
@@ -134,8 +139,16 @@ function quickScan()
 function basicScan()
 {
     write-host "----------Starting Nmap Basic Scan----------" -ForegroundColor Green;
+
+    #Check for QuickScan is handled under 'assignPorts'
     assignPorts($IP);
     
+    $scancmd = $nmapcmd + " -sCV -p" + $global:ports + " -oN nmap/Basic_" + $IP + ".nmap " + $IP;
+    & cmd /c $scancmd;
+
+    #osType/serviceOS modification goes here
+
+    write-host "`n`n`n";
 }
 
 
