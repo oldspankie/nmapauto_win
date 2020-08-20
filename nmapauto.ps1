@@ -10,7 +10,8 @@ param (
 $global:nmapcmd = "nmap";
 $global:scanQuiet = $false;
 $global:pingttl = "0";
-$global:ports = "";
+$global:basicPorts = "";
+$global:allPorts = "";
 
 function usage()
 {
@@ -97,7 +98,7 @@ function assignPorts()
 {
     if (test-path -path "nmap/quick_$IP.nmap")
     {
-        $global:ports = ""; #re-init ports var
+        $global:basicPorts = ""; #re-init ports var
         #basicPorts=$(cat nmap/Quick_"$1".nmap | grep open | cut -d " " -f 1 | cut -d "/" -f 1 | tr "\n" "," | cut -c3- | head -c-2)
         #$basicPorts = (get-content "nmap/quick_$IP.nmap") | select-string "open" | $_.split(" ")[1] | $_.split("/")[1] | $_ -replace "\n" "," | select -first 1
         $basicPorts = (get-content "nmap/quick_$IP.nmap") | select-string "open";
@@ -108,19 +109,19 @@ function assignPorts()
             if ($i -ne 0)
             {
                 $ba = $basicPorts[$i] -split ("/");
-                $global:ports += $ba[0] + ",";
+                $global:basicPorts += $ba[0] + ",";
             }
         }
-        while ($global:ports -match '\,$')
+        while ($global:basicPorts -match '\,$')
         {
-            $global:ports = $global:ports -replace ".$" #clean trailing ,'s
+            $global:basicPorts = $global:basicPorts -replace ".$" #clean trailing ,'s
         }
-        #write-host $global:ports;
+        #write-host $global:basicPorts;
     }
     else
     {
         #scan all ports
-        $global:ports = "-";
+        $global:basicPorts = "-";
     }
 }
 
@@ -143,7 +144,7 @@ function basicScan()
     #Check for QuickScan is handled under 'assignPorts'
     assignPorts($IP);
     
-    $scancmd = $nmapcmd + " -sCV -p" + $global:ports + " -oN nmap/Basic_" + $IP + ".nmap " + $IP;
+    $scancmd = $nmapcmd + " -sCV -p" + $global:basicPorts + " -oN nmap/Basic_" + $IP + ".nmap " + $IP;
     & cmd /c $scancmd;
 
     #osType/serviceOS modification goes here
@@ -151,6 +152,16 @@ function basicScan()
     write-host "`n`n`n";
 }
 
+function fullScan()
+{
+    write-host "----------Starting Nmap Basic Scan----------" -ForegroundColor Green;
+
+    $scancmd = $nmapcmd + " -p- --max-retries 1 --max-rate 500 --max-scan-delay 20 -T4 -v -oN nmap/Full_" + $IP + ".nmap " + $IP;
+    & cmd /c $scancmd;
+    #assignPorts($IP);
+
+    #check and scan for extra ports
+}
 
 
 function footer()
@@ -190,7 +201,7 @@ if ($scanType)
     {
         "quick" { quickScan; }
         "basic" { basicScan; }
-        "full" { write-host "Full"; }
+        "full" { fullScan; }
         "vulns" { write-host "Vulns"; }
     }
 
