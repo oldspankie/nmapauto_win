@@ -96,33 +96,52 @@ function checkOS()
 
 function assignPorts()
 {
+    #basicPorts
     if (test-path -path "nmap/quick_$IP.nmap")
     {
         $global:basicPorts = ""; #re-init ports var
         #basicPorts=$(cat nmap/Quick_"$1".nmap | grep open | cut -d " " -f 1 | cut -d "/" -f 1 | tr "\n" "," | cut -c3- | head -c-2)
         #$basicPorts = (get-content "nmap/quick_$IP.nmap") | select-string "open" | $_.split(" ")[1] | $_.split("/")[1] | $_ -replace "\n" "," | select -first 1
         $basicPorts = (get-content "nmap/quick_$IP.nmap") | select-string "open";
-
-        #only pull the ports, skipping the first line
-        for ($i=0; $i -le $basicPorts.Length; $i++)
-        {
-            if ($i -ne 0)
-            {
-                $ba = $basicPorts[$i] -split ("/");
-                $global:basicPorts += $ba[0] + ",";
-            }
-        }
-        while ($global:basicPorts -match '\,$')
-        {
-            $global:basicPorts = $global:basicPorts -replace ".$" #clean trailing ,'s
-        }
-        #write-host $global:basicPorts;
+        $global:basicPorts = cleanPorts($basicPorts);
     }
     else
     {
         #scan all ports
         $global:basicPorts = "-";
     }
+
+    #allPorts
+    if (test-path -path "nmap/Full_$IP.nmap")
+    {
+        if (test-path -path "nmap/Quick_$IP.nmap")
+        {
+
+        }
+        else
+        {
+
+        }
+    }
+}
+
+function cleanPorts($_input)
+{
+    $_output = "";
+    #only pull the ports, skipping the first line
+    for ($i=0; $i -le $_input.Length; $i++)
+    {
+        if ($i -ne 0)
+        {
+            $ba = $_input[$i] -split ("/");
+            $_output += $ba[0] + ",";
+        }
+    }
+    while ($_output -match '\,$')
+    {
+        $_output = $_output -replace ".$" #clean trailing ,'s
+    }
+    return $_output;
 }
 
 function quickScan()
