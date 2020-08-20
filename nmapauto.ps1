@@ -185,6 +185,45 @@ function fullScan()
     #check and scan for extra ports
 }
 
+function vulnsScan()
+{
+    $portType = 'basic';
+    $ports = "";
+    assignPorts($IP);
+    if ($global:allPorts -eq "")
+    {
+        $portType = 'basic';
+        $ports = $global:basicPorts;
+    }
+    else
+    {
+        $portType = 'all';
+        $ports = $global:allPorts;
+    }
+
+    #test path to check for vulners.nse
+    #C:\Program Files (x86)\Nmap\scripts\vulners.nse
+    $ErrorActionPreference = 'SilentlyContinue';
+    if (test-path -path "nmap/quick_$IP.nmap")
+    {
+        write-host "Running CVE scan on $portType ports`n" -ForegroundColor Yellow;
+        $scancmd = $nmapcmd + " -sV --script vulners --script-args mincvss=7.0 -p" + $ports + " -oN nmap/CVEs_" + $IP + ".nmap " + $IP;
+        & cmd /c $scancmd;
+        
+    }
+    else
+    {
+        write-host "Please install 'vulners.nse' nmap script." -ForegroundColor Red;
+        write-host "ttps://github.com/vulnersCom/nmap-vulners" -ForegroundColor Red;
+        write-host "" -ForegroundColor Red;
+        write-host "Skipping CVE scan!`n" -ForegroundColor Red;
+    }
+    write-host "Running Vuln scan on $portType ports`n" -ForegroundColor Yellow;
+    $scancmd = $nmapcmd + " -sV --script vuln -p" + $ports + " -oN nmap/Vulns_" + $IP + ".nmap " + $IP;
+    & cmd /c $scancmd;
+    write-host "`n`n`n" -ForegroundColor Yellow;
+}
+
 
 function footer()
 {
@@ -224,7 +263,7 @@ if ($scanType)
         "quick" { quickScan; }
         "basic" { basicScan; }
         "full" { fullScan; }
-        "vulns" { write-host "Vulns"; }
+        "vulns" { vulnsScan; }
     }
 
     footer;
