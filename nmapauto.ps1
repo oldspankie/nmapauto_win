@@ -10,6 +10,7 @@ param (
 $global:nmapcmd = "nmap";
 $global:scanQuiet = $false;
 $global:pingttl = "0";
+$global:ports = "";
 
 function usage()
 {
@@ -92,13 +93,29 @@ function checkOS()
     }
 }
 
-function assignPort()
+function assignPorts()
 {
     if (test-path -path "nmap/quick_$IP.nmap")
     {
+        $global:ports = ""; #re-init ports var
         #basicPorts=$(cat nmap/Quick_"$1".nmap | grep open | cut -d " " -f 1 | cut -d "/" -f 1 | tr "\n" "," | cut -c3- | head -c-2)
-        #$basicPorts = (get-content "nmap/quick_$IP.nmap" | select-string "open" | $_.split(" ")[1] | $_.split("/")[1] | $_ -replace "\n" "," | select -first 1
-        #write-host $basicPorts;
+        #$basicPorts = (get-content "nmap/quick_$IP.nmap") | select-string "open" | $_.split(" ")[1] | $_.split("/")[1] | $_ -replace "\n" "," | select -first 1
+        $basicPorts = (get-content "nmap/quick_$IP.nmap") | select-string "open";
+
+        #only pull the ports, skipping the first line
+        for ($i=0; $i -le $basicPorts.Length; $i++)
+        {
+            if ($i -ne 0)
+            {
+                $ba = $basicPorts[$i] -split ("/");
+                $global:ports += $ba[0] + ",";
+            }
+        }
+        while ($global:ports -match '\,$')
+        {
+            $global:ports = $global:ports -replace ".$" #clean trailing ,'s
+        }
+        write-host $global:ports;
     }
 }
 
@@ -117,7 +134,7 @@ function quickScan()
 function basicScan()
 {
     write-host "----------Starting Nmap Basic Scan----------" -ForegroundColor Green;
-
+    assignPorts($IP);
     
 }
 
@@ -125,7 +142,13 @@ function basicScan()
 
 function footer()
 {
-    set-location -path ..
+    write-host "----------Finished all Nmap scans----------" -ForegroundColor Green;
+
+    set-location -path .. #need to double check what this is about, if not just to reset path
+
+    #time tracking portion here
+
+
 }
 
 
@@ -153,7 +176,7 @@ if ($scanType)
     switch ($scanType)
     {
         "quick" { quickScan; }
-        "basic" { write-host "Basic"; }
+        "basic" { basicScan; }
         "full" { write-host "Full"; }
         "vulns" { write-host "Vulns"; }
     }
